@@ -7,7 +7,7 @@ def parse_opt():
     parser.add_argument("--weights", type=str, default="checkpoint/yolo11s.pt", help="initial weights path")
     parser.add_argument("--data", type=str, default="open-images-v7.yaml")
     parser.add_argument("--device", default="0", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
-    parser.add_argument("--save_dir", type=str, default="", help="the path of weight")
+    parser.add_argument("--save_dir", type=str, default="", help="result save path")
     parser.add_argument("--resume", action="store_true", help="resume")
     parser.add_argument("--batch", type=int, default=16, help="batch size")
     parser.add_argument("--workers", type=int, default=8, help="workers")
