@@ -5,6 +5,12 @@
 # Start FROM PyTorch image https://hub.docker.com/r/pytorch/pytorch or nvcr.io/nvidia/pytorch:23.03-py3
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
+RUN mv /etc/apt/sources.list /etc/apt/sources.list.bak
+COPY docker/sources.list /etc/apt/
+RUN sed -i s@https@http@g /etc/apt/sources.list
+RUN apt-get -y update && apt-get -y install ca-certificates
+RUN sed -i s@http@https@g /etc/apt/sources.list && apt-get -y update
+
 # Set environment variables
 # Avoid DDP error "MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library" https://github.com/pytorch/pytorch/issues/37377
 # ENV PYTHONUNBUFFERED=1 \
@@ -37,6 +43,7 @@ COPY docker/requirements.txt /tmp/
 RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
     && pip install -r /tmp/requirements.txt
 
+COPY docker/Arial.ttf /root/.config/Ultralytics/
 # Create working directory
 COPY ultralytics /home/yolo/ultralytics
 COPY train.py /home/yolo/

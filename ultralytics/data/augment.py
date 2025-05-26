@@ -1137,16 +1137,20 @@ class RandomPerspective:
         if n == 0:
             return [], segments
 
-        xy = np.ones((n * num, 3), dtype=segments.dtype)
-        segments = segments.reshape(-1, 2)
-        xy[:, :2] = segments
-        xy = xy @ M.T  # transform
-        xy = xy[:, :2] / xy[:, 2:3]
-        segments = xy.reshape(n, -1, 2)
-        bboxes = np.stack([segment2box(xy, self.size[0], self.size[1]) for xy in segments], 0)
-        segments[..., 0] = segments[..., 0].clip(bboxes[:, 0:1], bboxes[:, 2:3])
-        segments[..., 1] = segments[..., 1].clip(bboxes[:, 1:2], bboxes[:, 3:4])
-        return bboxes, segments
+        try:
+            xy = np.ones((n * num, 3), dtype=segments.dtype)
+            segments = segments.reshape(-1, 2)
+            xy[:, :2] = segments
+            xy = xy @ M.T  # transform
+            xy = xy[:, :2] / xy[:, 2:3]
+            segments = xy.reshape(n, -1, 2)
+            bboxes = np.stack([segment2box(xy, self.size[0], self.size[1]) for xy in segments], 0)
+            segments[..., 0] = segments[..., 0].clip(bboxes[:, 0:1], bboxes[:, 2:3])
+            segments[..., 1] = segments[..., 1].clip(bboxes[:, 1:2], bboxes[:, 3:4])
+            return bboxes, segments
+        except Exception as err:
+            print(err)
+            return [], segments
 
     def apply_keypoints(self, keypoints, M):
         """
@@ -1848,9 +1852,9 @@ class Albumentations:
                 A.MedianBlur(p=0.01),
                 A.ToGray(p=0.01),
                 A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.0),
-                A.RandomGamma(p=0.0),
-                A.ImageCompression(quality_lower=75, p=0.0),
+                A.RandomBrightnessContrast(p=0.1),
+                A.RandomGamma(p=0.01),
+                A.ImageCompression(quality_lower=65, p=0.4),
             ]
 
             # Compose transforms

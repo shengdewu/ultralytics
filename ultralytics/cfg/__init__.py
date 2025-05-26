@@ -301,6 +301,10 @@ def get_cfg(cfg: Union[str, Path, Dict, SimpleNamespace] = DEFAULT_CFG_DICT, ove
     # Merge overrides
     if overrides:
         overrides = cfg2dict(overrides)
+
+        if overrides.get('save_dir', None) is not None:
+            cfg['save_dir'] = overrides['save_dir']
+
         if "save_dir" not in cfg:
             overrides.pop("save_dir", None)  # special override keys to ignore
         check_dict_alignment(cfg, overrides)

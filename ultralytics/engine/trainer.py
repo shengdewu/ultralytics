@@ -703,7 +703,10 @@ class BaseTrainer:
                     ckpt_args["data"] = self.args.data
 
                 resume = True
+                save_dir = self.args.get('save_dir', None)
                 self.args = get_cfg(ckpt_args)
+                if save_dir is not None:
+                    self.args.save_dir = save_dir
                 self.args.model = self.args.resume = str(last)  # reinstate model
                 for k in (
                     "imgsz",

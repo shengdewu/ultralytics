@@ -1,5 +1,5 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
-
+import os
 import json
 from collections import defaultdict
 from itertools import repeat
@@ -60,8 +60,12 @@ class YOLODataset(BaseDataset):
         self.use_keypoints = task == "pose"
         self.use_obb = task == "obb"
         self.data = data
+        self.fraction = kwargs['fraction']
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
+        self.ann_name = kwargs['img_path']
+        self.im_files, self.label_files = self.parse_img_label_files(self.ann_name)
         super().__init__(*args, **kwargs)
+        return
 
     def cache_labels(self, path=Path("./labels.cache")):
         """
@@ -130,10 +134,40 @@ class YOLODataset(BaseDataset):
         save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
         return x
 
+    def parse_img_label_files(self, ann_path):
+        label_files = list()
+        im_files = list()
+        for p in ann_path if isinstance(ann_path, list) else [ann_path]:
+            p = Path(p)  # os-agnostic
+            if p.is_file():  # file
+                with open(p, mode='r') as t:
+                    lines = t.read().strip().splitlines()
+                parent = str(p.parent) + '/'
+                for line in lines:
+                    img_path, label_path = line.split(',')
+                    img_path = parent + os.sep + img_path
+                    label_path = parent + os.sep + label_path
+                    if os.path.exists(label_path) and os.path.exists(img_path):
+                        label_files.append(label_path)
+                        im_files.append(img_path)
+
+        if len(label_files) == 0:
+            raise FileNotFoundError('无效的标注文件，请确认文件里的内容是否有效')
+
+        if self.fraction < 1:
+            total = len(label_files)
+            im_files = im_files[: round(total * self.fraction)]  # retain a fraction of the dataset
+            label_files = label_files[: round(total * self.fraction)]  # retain a fraction of the dataset
+        return im_files, label_files
+
+    def get_img_files(self, img_path):
+        """Read image files."""
+        return self.im_files
+
     def get_labels(self):
         """Returns dictionary of labels for YOLO training."""
-        self.label_files = img2label_paths(self.im_files)
-        cache_path = Path(self.label_files[0]).parent.with_suffix(".cache")
+        flag = self.ann_name.split('/')[-1].split('.')[0]
+        cache_path = Path(os.path.dirname(self.label_files[0]) + f'-{flag}').with_suffix('.cache')
         try:
             cache, exists = load_dataset_cache_file(cache_path), True  # attempt to load a *.cache file
             assert cache["version"] == DATASET_CACHE_VERSION  # matches current version
@@ -324,7 +358,7 @@ class GroundingDataset(YOLODataset):
                     continue
 
                 caption = img["caption"]
-                cat_name = " ".join([caption[t[0] : t[1]] for t in ann["tokens_positive"]])
+                cat_name = " ".join([caption[t[0]: t[1]] for t in ann["tokens_positive"]])
                 if cat_name not in cat2id:
                     cat2id[cat_name] = len(cat2id)
                     texts.append([cat_name])
