@@ -1,0 +1,39 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Builds ultralytics/ultralytics:latest image on DockerHub https://hub.docker.com/r/ultralytics/ultralytics
+# Image is CUDA-optimized for YOLO11 single/multi-GPU training and inference
+
+# Start FROM PyTorch image https://hub.docker.com/r/pytorch/pytorch or nvcr.io/nvidia/pytorch:23.03-py3
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+
+RUN mv /etc/apt/sources.list /etc/apt/sources.list.bak
+COPY docker/sources.list /etc/apt/
+RUN sed -i s@https@http@g /etc/apt/sources.list
+RUN apt-get -y update && apt-get -y install ca-certificates
+RUN sed -i s@http@https@g /etc/apt/sources.list && apt-get -y update
+
+RUN uname -a && python3 --version && python --version
+
+# Install linux packages
+# g++ required to build 'tflite_support' and 'lap' packages, libusb-1.0-0 required for 'tflite_support' package
+# libsm6 required by libqxcb to create QT-based windows for visualization; set 'QT_DEBUG_PLUGINS=1' to test in docker
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc git zip unzip wget curl htop libgl1 libglib2.0-0 libpython3-dev gnupg g++ libusb-1.0-0 libsm6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Security updates
+# https://security.snyk.io/vuln/SNYK-UBUNTU1804-OPENSSL-3314796
+RUN apt upgrade --no-install-recommends -y openssl tar
+
+COPY docker/requirements.txt /tmp/
+RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
+    && pip install -r /tmp/requirements.txt
+
+RUN pip install fastapi==0.115.12 pydantic==2.11.2 uvicorn==0.34.0
+
+COPY docker/Arial.ttf /root/.config/Ultralytics/
+# Create working directory
+COPY ultralytics /home/yolo/ultralytics
+COPY infer_web.py /home/yolo/
+WORKDIR /home/yolo/
+ENTRYPOINT ["python3", "infer_web.py"]

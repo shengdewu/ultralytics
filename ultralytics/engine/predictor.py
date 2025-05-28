@@ -210,10 +210,10 @@ class BasePredictor:
         )
         self.source_type = self.dataset.source_type
         if not getattr(self, "stream", True) and (
-            self.source_type.stream
-            or self.source_type.screenshot
-            or len(self.dataset) > 1000  # many images
-            or any(getattr(self.dataset, "video_flag", [False]))
+                self.source_type.stream
+                or self.source_type.screenshot
+                or len(self.dataset) > 1000  # many images
+                or any(getattr(self.dataset, "video_flag", [False]))
         ):  # videos
             LOGGER.warning(STREAM_WARNING)
         self.vid_writer = {}
@@ -304,6 +304,44 @@ class BasePredictor:
             s = f"\n{nl} label{'s' * (nl > 1)} saved to {self.save_dir / 'labels'}" if self.args.save_txt else ""
             LOGGER.info(f"Results saved to {colorstr('bold', self.save_dir)}{s}")
         self.run_callbacks("on_predict_end")
+
+    @smart_inference_mode()
+    def simple_inference(self, source: np.ndarray):
+
+        if self.batch is None:
+            self.batch = (['image.jpg'], [], [])
+
+        if self.imgsz is None:
+            self.imgsz = check_imgsz(self.args.imgsz, stride=self.model.stride, min_dim=2)  # check image size
+
+        # Warmup model
+        if not self.done_warmup:
+            self.model.warmup(imgsz=(1, 3, *self.imgsz))
+            self.done_warmup = True
+
+        if not hasattr(self, 'profilers'):
+            profilers = (
+                ops.Profile(device=self.device),
+                ops.Profile(device=self.device),
+                ops.Profile(device=self.device),
+            )
+            setattr(self, 'profilers', profilers)
+
+        with self._lock:  # for thread-safe inference
+
+            # Preprocess
+            with getattr(self, 'profilers')[0]:
+                im = self.preprocess([source])
+
+            # Inference
+            with getattr(self, 'profilers')[1]:
+                preds = self.inference(im)
+
+            # Postprocess
+            with getattr(self, 'profilers')[2]:
+                results = self.postprocess(preds, im, [source])
+
+            return results[0].boxes.data
 
     def setup_model(self, model, verbose=True):
         """Initialize YOLO model with given parameters and set it to evaluation mode."""
