@@ -807,10 +807,14 @@ def torch_safe_load(weight, safe_only=False):
         ckpt (dict): The loaded model checkpoint.
         file (str): The loaded filename
     """
-    from ultralytics.utils.downloads import attempt_download_asset
+    # from ultralytics.utils.downloads import attempt_download_asset
 
     check_suffix(file=weight, suffix=".pt")
-    file = attempt_download_asset(weight)  # search online if missing locally
+    # file = attempt_download_asset(weight)  # search online if missing locally
+
+    file = Path(weight.strip().replace("'", ""))
+    assert file.exists(), f'{weight} 不存在!!'
+
     try:
         with temporary_modules(
             modules={

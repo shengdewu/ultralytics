@@ -60,7 +60,7 @@ def create_data_cfg(opt):
     os.makedirs(label_parent, exist_ok=True)
 
     label_path = f'{label_parent}/labels'
-    if not os.path.exists(label_path):
+    if not os.path.exists(label_path) or opt.r_create:
         opt.r_create = True
         cmd = ['unzip', '-q', '-o', f, '-d', label_parent]
         status = run_cmd(cmd)
@@ -114,6 +114,7 @@ def create_data_cfg(opt):
     random.shuffle(data_sets)
 
     sp_idx = int(0.85 * len(data_sets))
+    assert sp_idx > 0, f'标注文件太少必须大于2张'
     with open(f'{root_path}/train.txt', mode='w') as f:
         for name in data_sets[:sp_idx]:
             f.write(f'{name}\n')
