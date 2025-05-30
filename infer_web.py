@@ -80,7 +80,7 @@ async def infer(data: InfData):
 
 def parse_opt():
     parser = argparse.ArgumentParser(description='推理服务参数')
-    parser.add_argument('--weight', type=str, default='', help='模型路径')
+    parser.add_argument('--weight', type=str, default='/workspace/dataset/models/best.pt', help='模型路径')
     return parser.parse_args()
 
 
