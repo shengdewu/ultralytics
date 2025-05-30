@@ -3,9 +3,14 @@ import re
 import random
 import json
 import subprocess
-from ultralytics import YOLO
 import argparse
 import yaml
+import torch
+from ultralytics import YOLO
+from ultralytics.nn.tasks import yaml_model_load
+
+
+MODEL_CFG_PATH = 'ultralytics/cfg/models'
 
 
 def probability(x):
@@ -15,9 +20,30 @@ def probability(x):
     return x
 
 
+def collect_mode_type():
+    mtype = ['11', 'v3', 'v5', 'v6', 'v8', 'v9', 'v10']
+    model_type = list()
+    for m in mtype:
+        for yml in os.listdir(f'{MODEL_CFG_PATH}/{m}'):
+            try:
+                scale = re.search(r"yolo[v]?\d+([cetbnslmx])", yml).group(1)
+            except AttributeError:
+                scale = ''
+            if scale != '':
+                model_type.append(f'{m}{scale}')
+            else:
+                model_type.append(m)
+    return model_type
+
+
 def parse_opt():
-    parser = argparse.ArgumentParser(description='yolo11启动参数')
-    parser.add_argument('--model-type', type=str, default='n', choices=['n', 's', 'm', 'l', 'x'], help='模型类型')
+    parser = argparse.ArgumentParser(description='yolo目标检测启动参数')
+    parser.add_argument('--model-type', type=str, default='11n',
+                        choices=collect_mode_type(),
+                        help='模型类型，目前支持11, v3, v5, v6, v8, v9, v10的各种版本')
+    parser.add_argument('--pretrain-model', type=str, default='',
+                        help='预训练模型必须和model-type匹配 /xx/yolo11n.pt，可以从这里下载对应版本https://docs.ultralytics.com/models/'
+                             'resume=True时，这个参数会失效')
     parser.add_argument('--img-path', type=str, default='', help='图片路径')
     parser.add_argument('--label-file', type=str, default='', help='标注压缩文件名')
     parser.add_argument('--epochs', type=int, default=100, help='模型训练的epoch')
@@ -151,10 +177,51 @@ def create_data_cfg(opt):
 def run(opt):
     opt.data = create_data_cfg(opt)
 
-    opt.weights = f'ultralytics/yolo11-ckpt/yolo11{opt.model_type}.pt'
+    try:
+        scale = re.search(r"[v]?\d+([cetbnslmx])", opt.model_type).group(1)
+        model_version = opt.model_type[:opt.model_type.find(scale)]
+    except AttributeError:
+        model_version = opt.model_type
+
+    model_name = f'yolo{opt.model_type}'
+    opt.weights = f'{MODEL_CFG_PATH}/{model_version}/{model_name}.yaml'
+
+    print(f'加载模型配置文件 {opt.weights } !')
+
+    if not opt.resume and os.path.exists(opt.pretrain_model):
+        try:
+            check_model_name = re.search(r"yolo[v]?\d+([cetbnslmx])", opt.pretrain_model).group(0)
+        except AttributeError:
+            check_model_name = ''
+
+        assert check_model_name == model_name, f'({opt.pretrain_model})预训练模型和指定的模型类型不匹配({model_name})'
+
+        opt.weights = opt.pretrain_model
+        print(f'使用与训练模型 {opt.pretrain_model} !')
+
+    if opt.resume:
+        resume_weight = f'{opt.save_dir}/weights/last.pt' # 和 ultralytics/engine/trainer.py:117 强关联
+        assert os.path.exists(resume_weight), f'启动恢复训练时,最近一次保存的checkpoint({resume_weight})不存在'
+        check = torch.load(resume_weight, map_location='cpu')
+        check_model = check.get('model', None)
+        check_model = check_model if check_model is not None else check.get('ema', None)
+        assert check_model is not None, f'{resume_weight} 模型格式不正确，这个模型不能进行resume, 请重新训练'
+        if opt.weights.endswith('yaml'):
+            weight = yaml_model_load(opt.weights)
+        else:
+            weight = torch.load(opt.weights, map_location='cpu')['model'].yaml
+        check = check_model.yaml
+        for k, cv in check.items():
+            if k in ['yaml_file', 'ch']:
+                continue
+            wv = weight.get(k, None)
+            assert wv is not None and wv == cv, f'对比恢复训练的模型和[model_type]指定的模型类型({opt.model_type})时，发现{k}的' \
+                                                f'值不一致({cv})!=({wv})不一致, 请检查输入参数(model_type)和原来的是否一致!'
+
+        opt.weights = resume_weight
 
     # 加载模型
-    model = YOLO(opt.weights)
+    model = YOLO(opt.weights, task='detect')
 
     # 训练模型
     train_results = model.train(
