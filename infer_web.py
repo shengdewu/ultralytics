@@ -64,17 +64,26 @@ class InfData(BaseModel):
 async def infer(data: InfData):
     results = app.state.engine_client(base2numpy(data.image_base64), data.confidence)
 
-    results = results.detach().cpu().numpy()[0]
-    x1, y1, x2, y2, conf, cls = results
+    x1, y1, x2, y2, confidence, cls = 0, 0, 0, 0, 0, -1
+
+    if results.shape[0] > 0:
+        results = results.detach().cpu().numpy()[0]
+        x1, y1, x2, y2, conf, cls = results
+        x1 = x1.item()
+        y1 = y1.item()
+        x2 = x2.item()
+        y2 = y2.item()
+        confidence = conf.item()
+        cls = int(cls.item())
 
     # 返回结果
     return {
-        "x1": x1.item(),
-        "y1": y1.item(),
-        "x2": x2.item(),
-        "y2": y2.item(),
-        "confidence": conf.item(),
-        "cls": int(cls.item())
+        "x1": x1,
+        "y1": y1,
+        "x2": x2,
+        "y2": y2,
+        "confidence": confidence,
+        "cls": cls
     }
 
 
