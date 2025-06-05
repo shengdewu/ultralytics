@@ -212,7 +212,7 @@ def run(opt):
             weight = torch.load(opt.weights, map_location='cpu')['model'].yaml
         check = check_model.yaml
         for k, cv in check.items():
-            if k in ['yaml_file', 'ch']:
+            if k in ['yaml_file', 'ch', 'nc']:
                 continue
             wv = weight.get(k, None)
             assert wv is not None and wv == cv, f'对比恢复训练的模型和[model_type]指定的模型类型({opt.model_type})时，发现{k}的' \
