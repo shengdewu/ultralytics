@@ -62,29 +62,24 @@ class InfData(BaseModel):
 # 处理文本+图像输入的 API
 @app.post("/infer")
 async def infer(data: InfData):
-    results = app.state.engine_client(base2numpy(data.image_base64), data.confidence)
+    preds = app.state.engine_client(base2numpy(data.image_base64), data.confidence)
 
-    x1, y1, x2, y2, confidence, cls = 0, 0, 0, 0, 0, -1
-
-    if results.shape[0] > 0:
-        results = results.detach().cpu().numpy()[0]
-        x1, y1, x2, y2, conf, cls = results
-        x1 = x1.item()
-        y1 = y1.item()
-        x2 = x2.item()
-        y2 = y2.item()
-        confidence = conf.item()
-        cls = int(cls.item())
+    results = list()
+    preds = preds.detach().cpu().numpy()
+    for i in range(preds.shape[0]):
+        pred = preds[i]
+        x1, y1, x2, y2, conf, cls = pred
+        results.append({
+            "x1": x1.item(),
+            "y1": y1.item(),
+            "x2": x2.item(),
+            "y2": y2.item(),
+            "confidence": conf.item(),
+            "cls": int(cls.item())
+        })
 
     # 返回结果
-    return {
-        "x1": x1,
-        "y1": y1,
-        "x2": x2,
-        "y2": y2,
-        "confidence": confidence,
-        "cls": cls
-    }
+    return results
 
 
 def parse_opt():

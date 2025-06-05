@@ -14,8 +14,7 @@ def numpy2base(image):
     return base
 
 
-def client(img_path):
-    address = 'http://127.0.0.1:8000/infer'
+def client(img_path, address='http://127.0.0.1:8000/infer'):
     image = cv2.imread(img_path, cv2.IMREAD_COLOR)
     buffer = numpy2base(image)
 
@@ -24,25 +23,28 @@ def client(img_path):
         "confidence": 0.2
     }
 
-    result = None
+    results = None
     try:
         response = requests.post(address, json=params, timeout=10)
         if response.status_code != 200:
-            print(f'获取推理结果[{json.dumps(params)}] 出错{response.text}')
+            print(f'获取推理结果 出错{response.text}')
         else:
-            result = response.json()
+            results = response.json()
+            print(results)
     except Exception as err:
-        print(f'获取推理结果[{json.dumps(params)}] 出错:{err}')
+        print(f'获取推理结果 出错:{err}')
 
-    cv2.rectangle(image, (int(result['x1']), int(result['y1'])), (int(result['x2']), int(result['y2'])), color=(255, 255, 255))
-    cls = result['cls']
-    conf = result['confidence']
-    cv2.putText(image, f'{cls}-{conf}', (int(result['x1']), int(result['y1'])), 1, 1, color=(255, 0, 0))
-    cv2.imwrite('result.jpg', image)
+    if results is not None:
+        for result in results:
+            cv2.rectangle(image, (int(result['x1']), int(result['y1'])), (int(result['x2']), int(result['y2'])), color=(255, 255, 255))
+            cls = result['cls']
+            conf = result['confidence']
+            cv2.putText(image, f'{cls}-{conf}', (int(result['x1']), int(result['y1'])), 1, 1, color=(255, 0, 0))
+        cv2.imwrite('result.jpg', image)
 
     return
 
 
 # 启动命令
 if __name__ == "__main__":
-    client('./datasets/test.jpg')
+    client('./datasets/0-1.jpg')
