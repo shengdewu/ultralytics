@@ -101,6 +101,7 @@ class BaseTrainer:
         self.args = get_cfg(cfg, overrides)
         self.check_resume(overrides)
         self.device = select_device(self.args.device, self.args.batch)
+        LOGGER.info(f"{colorstr('Trainer:')} 选择设备 {self.device}")
         self.validator = None
         self.metrics = None
         self.plots = {}

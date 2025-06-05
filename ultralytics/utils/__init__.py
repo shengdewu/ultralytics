@@ -25,6 +25,7 @@ import numpy as np
 import torch
 import yaml
 from tqdm import tqdm as tqdm_original
+import struct
 
 from ultralytics import __version__
 
@@ -1343,3 +1344,22 @@ torch.save = torch_save
 if WINDOWS:
     # Apply cv2 patches for non-ASCII and non-UTF characters in image paths
     cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow
+
+
+def get_shm_size():
+    try:
+        # 打开 /dev/shm 目录
+        fd = os.open('/dev/shm', os.O_RDONLY)
+        try:
+            # Linux 系统的 statfs 结构
+            # 不同系统可能需要调整结构格式
+            buf = os.fstatvfs(fd)
+            # 提取 f_bsize (block size) 和 f_blocks (total blocks)
+            f_bsize = struct.unpack('Q', struct.pack('@Q', buf.f_bsize))[0]
+            f_blocks = struct.unpack('Q', struct.pack('@Q', buf.f_blocks))[0]
+            return f_bsize * f_blocks #字节
+        finally:
+            os.close(fd)
+    except Exception as e:
+        print(f"Error: {e}")
+        return None

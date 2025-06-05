@@ -23,7 +23,7 @@ from ultralytics.data.loaders import (
 from ultralytics.data.utils import IMG_FORMATS, PIN_MEMORY, VID_FORMATS
 from ultralytics.utils import RANK, colorstr
 from ultralytics.utils.checks import check_file
-
+from ultralytics.utils import get_shm_size
 
 class InfiniteDataLoader(dataloader.DataLoader):
     """
@@ -141,6 +141,7 @@ def build_dataloader(dataset, batch, workers, shuffle=True, rank=-1):
     batch = min(batch, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
     nw = min(os.cpu_count() // max(nd, 1), workers)  # number of workers
+    print(f'创建数据集合：数据处理的工作进程数({nw}), 批大小({batch}), pin_memory({PIN_MEMORY})， 显卡数量({nd}), cpu核数({os.cpu_count()}), 共享缓存 ({get_shm_size() / (1024**3):.2f} GB)')
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     generator = torch.Generator()
     generator.manual_seed(6148914691236517205 + RANK)
