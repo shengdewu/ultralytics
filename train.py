@@ -69,7 +69,7 @@ def run_cmd(cmd: list):
         if result.stdout:
             print(f"标准输出:\n{result.stdout}")
     except subprocess.CalledProcessError as e:
-        print(f"支持命令{' '.join(cmd)}失败: {e}")
+        print(f"执行命令{' '.join(cmd)} 失败: {e}")
         success = 1
     return success
 
@@ -87,6 +87,8 @@ def create_data_cfg(opt):
 
         label_path = f'{label_parent}/labels'
         if not os.path.exists(label_path) or opt.r_create:
+            if os.path.exists(label_path):
+                run_cmd(['rm', '-rf', label_path])
             opt.r_create = True
             cmd = ['unzip', '-q', '-o', f, '-d', label_parent]
             status = run_cmd(cmd)

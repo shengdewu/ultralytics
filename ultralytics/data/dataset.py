@@ -173,6 +173,7 @@ class YOLODataset(BaseDataset):
             assert cache["version"] == DATASET_CACHE_VERSION  # matches current version
             assert cache["hash"] == get_hash(self.label_files + self.im_files)  # identical hash
         except (FileNotFoundError, AssertionError, AttributeError):
+            LOGGER.warning(f'重新创建数据缓存 标签个数 {len(self.label_files)}, 图片个数 {len(self.im_files)}')
             cache, exists = self.cache_labels(cache_path), False  # run cache ops
 
         # Display cache
