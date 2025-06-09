@@ -203,7 +203,7 @@ def run(opt):
         assert check_model_name == model_name, f'({opt.pretrain_model})预训练模型和指定的模型类型不匹配({model_name})'
 
         opt.weights = opt.pretrain_model
-        print(f'使用与训练模型 {opt.pretrain_model} !')
+        print(f'使用预训练模型 {opt.pretrain_model} !')
 
     if opt.resume:
         resume_weight = f'{opt.save_dir}/weights/last.pt' # 和 ultralytics/engine/trainer.py:117 强关联
