@@ -45,7 +45,7 @@ def parse_opt():
                         help='预训练模型必须和model-type匹配 /xx/yolo11n.pt，可以从这里下载对应版本https://docs.ultralytics.com/models/'
                              'resume=True时，这个参数会失效')
     parser.add_argument('--img-path', type=str, default='', help='图片路径')
-    parser.add_argument('--label-file', type=str, default='', help='标注压缩文件名或者标签目录(必须包含abel/labels和label/notes.json）')
+    parser.add_argument('--label-file', type=str, default='', help='标签目录(必须包含labels和notes.json）或者压缩文件 (就是在标签目录下的zip)')
     parser.add_argument('--epochs', type=int, default=100, help='模型训练的epoch')
     parser.add_argument('--batch', type=int, default=16, help='模型输入的批数')
     parser.add_argument('--workers', type=int, default=4, help='数据处理的进程数')
