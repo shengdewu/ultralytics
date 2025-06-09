@@ -36,6 +36,14 @@ def collect_mode_type():
     return model_type
 
 
+def device_type(value):
+    # 正则匹配 cuda:<数字> 或 cpu
+    if value == 'cpu' or value == 'cuda' or re.fullmatch(r'cuda:\d+', value):
+        return value
+    else:
+        raise argparse.ArgumentTypeError(f"Invalid device: {value}")
+
+
 def parse_opt():
     parser = argparse.ArgumentParser(description='yolo目标检测启动参数')
     parser.add_argument('--model-type', type=str, default='11n',
@@ -49,7 +57,7 @@ def parse_opt():
     parser.add_argument('--epochs', type=int, default=100, help='模型训练的epoch')
     parser.add_argument('--batch', type=int, default=16, help='模型输入的批数')
     parser.add_argument('--workers', type=int, default=4, help='数据处理的进程数')
-    parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='模型训练使用的设备')
+    parser.add_argument('--device', type=device_type, default='cuda', help='模型训练使用的设备')
     parser.add_argument('--imgsz', type=int, default=640, help='图片输入到模型的大小')
     parser.add_argument('--lr', type=probability, default=0.01, help='学习率取值范围(0, 1)')
     parser.add_argument("--save-dir", type=str, default="./save", help="结果保持路径")
