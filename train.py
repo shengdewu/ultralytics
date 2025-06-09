@@ -45,7 +45,7 @@ def parse_opt():
                         help='预训练模型必须和model-type匹配 /xx/yolo11n.pt，可以从这里下载对应版本https://docs.ultralytics.com/models/'
                              'resume=True时，这个参数会失效')
     parser.add_argument('--img-path', type=str, default='', help='图片路径')
-    parser.add_argument('--label-file', type=str, default='', help='标注压缩文件名')
+    parser.add_argument('--label-file', type=str, default='', help='标注压缩文件名或者标签目录(必须包含abel/labels和label/notes.json）')
     parser.add_argument('--epochs', type=int, default=100, help='模型训练的epoch')
     parser.add_argument('--batch', type=int, default=16, help='模型输入的批数')
     parser.add_argument('--workers', type=int, default=4, help='数据处理的进程数')
@@ -76,25 +76,29 @@ def run_cmd(cmd: list):
 
 def create_data_cfg(opt):
     f = opt.label_file
-    assert f.endswith('zip'), f'标签文件必须是zip文件，但是接受到的是{f}'
     assert os.path.exists(f), f'{f} 不存在'
     img_path = opt.img_path
 
     assert os.path.isabs(f) and os.path.isabs(img_path), '图片路径和标签路径必须是绝对路径'
 
-    label_parent = f'{os.path.dirname(f)}/label_parent'
-    os.makedirs(label_parent, exist_ok=True)
+    if f.endswith('zip'):
+        label_parent = f'{os.path.dirname(f)}/label_parent'
+        os.makedirs(label_parent, exist_ok=True)
 
-    label_path = f'{label_parent}/labels'
-    if not os.path.exists(label_path) or opt.r_create:
-        opt.r_create = True
-        cmd = ['unzip', '-q', '-o', f, '-d', label_parent]
-        status = run_cmd(cmd)
-        assert status == 0, '解压失败'
+        label_path = f'{label_parent}/labels'
+        if not os.path.exists(label_path) or opt.r_create:
+            opt.r_create = True
+            cmd = ['unzip', '-q', '-o', f, '-d', label_parent]
+            status = run_cmd(cmd)
+            assert status == 0, '解压失败'
+
+        note = f'{label_parent}/notes.json'
+    else:
+        label_path = f'{f}/labels'
+        note = f'{f}/notes.json'
 
     assert os.path.exists(label_path), '压缩文件里没有labels目录'
-    note = f'{label_parent}/notes.json'
-    assert os.path.exists(label_path), '压缩文件里没有发现 notes.json 文件'
+    assert os.path.exists(note), '压缩文件里没有发现 notes.json 文件'
 
     # 寻找公共目录作为数据的root目录
     label_arr = label_path.split('/')
