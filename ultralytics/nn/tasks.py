@@ -11,6 +11,10 @@ import thop
 import torch
 import torch.nn as nn
 
+import torch_npu
+from torch_npu.contrib import transfer_to_npu
+torch_npu.npu.set_compile_mode(jit_compile=False)
+
 from ultralytics.nn.modules import (
     AIFI,
     C1,

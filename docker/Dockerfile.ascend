@@ -1,0 +1,18 @@
+FROM zlzn/ascend-910b:base
+
+COPY docker/requirements.ascend.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
+
+RUN yum install -y unzip
+
+COPY docker/Arial.ttf /root/.config/Ultralytics/
+# Create working directory
+COPY ultralytics /home/workspace/ultralytics
+COPY train.py /home/workspace/
+
+COPY docker/run.ascend.sh /home/workspace/run.sh
+RUN chmod +x /home/workspace/run.sh
+
+WORKDIR /home/workspace/
+
+ENTRYPOINT ["./run.sh"]

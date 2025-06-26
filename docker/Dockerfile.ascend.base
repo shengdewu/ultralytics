@@ -1,0 +1,88 @@
+FROM openeuler/openeuler:24.03-lts
+
+RUN export https_proxy=http://10.2.139.57:8888 &&\
+    export http_proxy=http://10.2.139.57:8888 &&\
+    export all_proxy=http://10.2.139.57:8888
+
+# RUN export ALL_PROXY=socks5h://192.168.40.7:7070
+
+
+#更新源
+COPY sources.oe24.3.repo /tmp/openEuler.repo
+RUN mv /etc/yum.repos.d/openEuler.repo /etc/yum.repos.d/openEuler.repo.bck && mv /tmp/openEuler.repo /etc/yum.repos.d/openEuler.repo \
+    && yum clean all && yum makecache && yum update  -y --allowerasing
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+RUN yum install -y tzdata && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN python3 --version && yum install -y python3-pip && pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+# CANN版本必须是8.1.RC1
+# 下载软件包
+# wget https://download.pytorch.org/whl/cpu/torch-2.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+# # 安装命令
+# pip3 install torch-2.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+
+# # 下载插件包
+# wget https://gitee.com/ascend/pytorch/releases/download/v7.0.0-pytorch2.5.1/torch_npu-2.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+# # 安装命令
+# pip3 install torch_npu-2.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+# pip3 install torch_npu==2.5.1 可以自动下载 torch_npu-2.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+# pip3 install torch==2.5.1     可以自动下载 torch-2.5.1-cp311-cp311-manylinux_aarch64.manylinux2014_aarch64.whl版本不匹配(阿里云)
+
+ARG CANN_VERSION=8.1.RC1
+ARG PYTORCH_VDERSION=311
+ARG TORCH_VERSION=2.5.1
+ARG TORCH_VISION=0.20.1
+
+RUN pip3 install torch==$TORCH_VERSION && pip3 install torch_npu==$TORCH_VERSION && pip3 install torchvision==$TORCH_VISION
+
+RUN yum makecache && yum install -y make dkms gcc gcc-c++ wget shadow-utils util-linux python3-devel mesa-libGL # opencv
+
+ARG ASCEND_BASE=/usr/local/Ascend
+
+ARG CANN_PKG=Ascend-cann-toolkit_${CANN_VERSION}_linux-aarch64.run
+COPY ${CANN_PKG} /tmp/
+RUN cd /tmp && chmod +x $CANN_PKG && \
+    ./$CANN_PKG --quiet --install --install-path=$ASCEND_BASE --install-for-all
+
+ARG KERNEL_PKG=Ascend-cann-kernels-910b_${CANN_VERSION}_linux-aarch64.run
+COPY ${KERNEL_PKG} /tmp/
+RUN cd /tmp && chmod +x $KERNEL_PKG && \
+    ./$KERNEL_PKG --quiet --install --install-path=$ASCEND_BASE --install-for-all
+
+
+RUN pip3 install attrs && \
+    pip3 install decorator && \
+    pip3 install sympy && \
+    pip3 install cffi && \
+    pip3 install pyyaml && \
+    pip3 install pathlib2 && \
+    pip3 install psutil && \
+    pip3 install protobuf && \
+    pip3 install scipy && \
+    pip3 install requests && \
+    pip3 install absl-py
+
+
+#设置环境变量
+RUN echo 'source /usr/local/Ascend/ascend-toolkit/set_env.sh' >> ~/.bashrc && rm -rf /tmp/ && rm -rf /root/.cache
+
+ENV LD_LIBRARY_PATH=$ASCEND_BASE/driver/lib64:$ASCEND_BASE/driver/lib64/common:$ASCEND_BASE/driver/lib64/driver:\
+$ASCEND_BASE/driver/tools/hccn_tool/:/lib64:$LD_LIBRARY_PATH
+
+
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/lib64:/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/devlib
+
+# torchvision_npu
+# git clone https://gitee.com/ascend/vision.git
+#  目前 master 对应torch 2.5.1
+# 根据 README.md  编译安装 [ pip install -r requirement.txt 这一步不需要了]
+# 可以把torchvision_npu的编译结果拷贝出来
+
+COPY torchvision_npu-0.21.0*.whl /tmp/
+RUN pip3 install /tmp/torchvision_npu-0.21.0*.whl
+
+RUN rm -rf /tmp/*
+CMD ["bash"]
+

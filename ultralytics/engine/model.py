@@ -6,6 +6,11 @@ from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
+
+import torch_npu
+from torch_npu.contrib import transfer_to_npu
+torch_npu.npu.set_compile_mode(jit_compile=False)
+
 from PIL import Image
 
 from ultralytics.cfg import TASK2DATA, get_cfg, get_save_dir
