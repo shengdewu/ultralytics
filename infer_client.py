@@ -20,7 +20,7 @@ def client(img_path, address='http://127.0.0.1:8000/infer'):
 
     params = {
         "image_base64": buffer,
-        "confidence": 0.2
+        "confidence": 0.6
     }
 
     results = None
@@ -47,4 +47,4 @@ def client(img_path, address='http://127.0.0.1:8000/infer'):
 
 # 启动命令
 if __name__ == "__main__":
-    client('./datasets/0-1.jpg')
+    client('./datasets/0-2.jpg', 'http://10.113.19.30:38000/infer')

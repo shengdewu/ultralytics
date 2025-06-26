@@ -42,13 +42,12 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='checkpoints/yolo11l.pth', help='模型类型')
     args = parser.parse_args()
 
-    test_performance(torch.load(args.model, map_location='cpu'), 640)
-
-
-    model = YOLO(args.mode)  # load an official model
+    model = YOLO(args.model)  # load an official model
 
     # results = model.predict("read.jpg", conf=0.25)
     # results[0].show()
     
     # Export the model
-    model.export(format="trochscript", opset=11)
+    model.export(format="onnx", opset=11)
+
+    test_performance(model, 640)
