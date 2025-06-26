@@ -3,12 +3,12 @@ FROM zlzn/ascend-910b:base
 COPY docker/requirements.ascend.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
 
-RUN yum install -y unzip
+RUN pip install fastapi==0.115.12 pydantic==2.11.2 uvicorn==0.34.0
 
 COPY docker/Arial.ttf /root/.config/Ultralytics/
 # Create working directory
 COPY ultralytics /home/workspace/ultralytics
-COPY train.py /home/workspace/run.py
+COPY infer_web.py /home/workspace/run.py
 
 COPY docker/run.ascend.sh /home/workspace/run.sh
 RUN chmod +x /home/workspace/run.sh
@@ -16,3 +16,4 @@ RUN chmod +x /home/workspace/run.sh
 WORKDIR /home/workspace/
 
 ENTRYPOINT ["./run.sh"]
+
