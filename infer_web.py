@@ -88,7 +88,13 @@ def infer_gradio(image, confidence):
     图像处理测试函数
     """
     results = app.state.engine_client(image[:, :, ::-1], confidence)
-    return results
+    for result in results:
+        cv2.rectangle(image, (int(result['x1']), int(result['y1'])), (int(result['x2']), int(result['y2'])),
+                      color=(255, 255, 255))
+        cls = result['cls']
+        conf = result['confidence']
+        cv2.putText(image, f'{cls}-{conf}', (int(result['x1']), int(result['y1'])), 1, 1, color=(255, 0, 0))
+    return results, image
 
 
 def cv_ui():
@@ -98,12 +104,13 @@ def cv_ui():
         with gr.Row():
             with gr.Column():
                 image_input = gr.Image(type="numpy", label="上传图像", interactive=True, image_mode='RGB')
-                confidence = gr.Slider(minimum=0, maximum=1.0, step=0.1, label='置信度阈值')
+                confidence = gr.Slider(minimum=0, maximum=1.0, step=0.1, value=0.6, label='置信度阈值')
                 submit_button = gr.Button("提交")
             with gr.Column():
+                image_output = gr.Image(label='图片')
                 result_output = gr.JSON(label="结果")
 
-        submit_button.click(infer_gradio, inputs=(image_input, confidence), outputs=result_output)
+        submit_button.click(infer_gradio, inputs=(image_input, confidence), outputs=[result_output, image_output])
 
     return block
 
