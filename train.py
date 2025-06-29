@@ -4,6 +4,8 @@ import random
 import json
 import subprocess
 import argparse
+import sys
+
 import yaml
 import torch
 from ultralytics import YOLO
@@ -264,3 +266,4 @@ def run(opt):
 
 if __name__ == '__main__':
     run(parse_opt())
+    sys.exit(0)
