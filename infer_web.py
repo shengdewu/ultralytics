@@ -9,6 +9,7 @@ import base64
 from contextlib import asynccontextmanager
 import argparse
 import gradio as gr
+from gradio.themes.utils.colors import Color
 from gradio.routes import mount_gradio_app
 
 
@@ -98,14 +99,17 @@ def infer_gradio(image, confidence):
 
 
 def cv_ui():
-    with gr.Blocks() as block:
+    zl_color = Color(name="zl_color", c50="#0055a2", c100="#0055a2", c200="#0055a2", c300="#0055a2", c400="#0055a2",
+                     c500="#0055a2", c600="#0055a2", c700="#0055a2", c800="#0055a2", c900="#0055a2", c950="#0055a2", )
+
+    with gr.Blocks(theme=gr.themes.Default(primary_hue=zl_color, secondary_hue="blue", spacing_size="sm", radius_size="sm")) as block:
         gr.Markdown("## 图像测试页面")
         gr.Markdown("改页面为图像测试页面，用户可以上传图像并获取处理结果。")
         with gr.Row():
             with gr.Column():
                 image_input = gr.Image(type="numpy", label="上传图像", interactive=True, image_mode='RGB')
                 confidence = gr.Slider(minimum=0, maximum=1.0, step=0.1, value=0.6, label='置信度阈值')
-                submit_button = gr.Button("提交")
+                submit_button = gr.Button("提交", variant='primary')
             with gr.Column():
                 image_output = gr.Image(label='图片')
                 result_output = gr.JSON(label="结果")
