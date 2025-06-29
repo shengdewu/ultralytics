@@ -8,6 +8,9 @@ import uvicorn
 import base64
 from contextlib import asynccontextmanager
 import argparse
+import gradio as gr
+from gradio.routes import mount_gradio_app
+
 
 WEIGHT = 'save/weights/best.pt'
 
@@ -38,7 +41,22 @@ class YOLOEngine:
         return
 
     def __call__(self, in_array: np.ndarray, conf=0.25):
-        return self.model.simple_predict(in_array, conf=conf)
+        preds = self.model.simple_predict(in_array, conf=conf)
+
+        results = list()
+        preds = preds.detach().cpu().numpy()
+        for i in range(preds.shape[0]):
+            pred = preds[i]
+            x1, y1, x2, y2, conf, cls = pred
+            results.append({
+                "x1": x1.item(),
+                "y1": y1.item(),
+                "x2": x2.item(),
+                "y2": y2.item(),
+                "confidence": conf.item(),
+                "cls": int(cls.item())
+            })
+        return results
 
 
 # 启动时初始化模型
@@ -62,24 +80,36 @@ class InfData(BaseModel):
 # 处理文本+图像输入的 API
 @app.post("/infer")
 async def infer(data: InfData):
-    preds = app.state.engine_client(base2numpy(data.image_base64), data.confidence)
+    return app.state.engine_client(base2numpy(data.image_base64), data.confidence)
 
-    results = list()
-    preds = preds.detach().cpu().numpy()
-    for i in range(preds.shape[0]):
-        pred = preds[i]
-        x1, y1, x2, y2, conf, cls = pred
-        results.append({
-            "x1": x1.item(),
-            "y1": y1.item(),
-            "x2": x2.item(),
-            "y2": y2.item(),
-            "confidence": conf.item(),
-            "cls": int(cls.item())
-        })
 
-    # 返回结果
+def infer_gradio(image, confidence):
+    """
+    图像处理测试函数
+    """
+    results = app.state.engine_client(image[:, :, ::-1], confidence)
     return results
+
+
+def cv_ui():
+    with gr.Blocks() as block:
+        gr.Markdown("## 图像测试页面")
+        gr.Markdown("改页面为图像测试页面，用户可以上传图像并获取处理结果。")
+        with gr.Row():
+            with gr.Column():
+                image_input = gr.Image(type="numpy", label="上传图像", interactive=True, image_mode='RGB')
+                confidence = gr.Slider(minimum=0, maximum=1.0, step=0.1, label='置信度阈值')
+                submit_button = gr.Button("提交")
+            with gr.Column():
+                result_output = gr.JSON(label="结果")
+
+        submit_button.click(infer_gradio, inputs=(image_input, confidence), outputs=result_output)
+
+    return block
+
+
+# 将 Gradio 应用挂载到 FastAPI 上，路径为 "/gradio"
+app = mount_gradio_app(app=app, blocks=cv_ui(), path="/ui")
 
 
 def parse_opt():
@@ -93,4 +123,4 @@ if __name__ == "__main__":
     args = parse_opt()
     WEIGHT = args.weight
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=54321)
