@@ -7,7 +7,7 @@ import argparse
 import yaml
 import torch
 from ultralytics import YOLO
-from ultralytics.nn.tasks import yaml_model_load, guess_model_name, guess_model_scale, guess_model_scale_by_type
+from ultralytics.nn.tasks import yaml_model_load, guess_model_name, guess_model_type, guess_model_scale_by_type
 
 
 MODEL_CFG_PATH = 'ultralytics/cfg/models'
@@ -25,9 +25,9 @@ def collect_mode_type():
     model_type = list()
     for m in mtype:
         for yml in os.listdir(f'{MODEL_CFG_PATH}/{m}'):
-            scale = guess_model_scale(yml)
-            if scale != '':
-                model_type.append(f'{m}{scale}')
+            version, obb = guess_model_type(yml)
+            if version != '':
+                model_type.append(f'{m}{version}{obb}')
             else:
                 model_type.append(m)
     return model_type

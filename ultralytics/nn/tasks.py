@@ -1123,22 +1123,43 @@ def guess_model_scale(model_path):
         (str): The size character of the model's scale, which can be n, s, m, l, or x.
     """
     try:
-        return re.search(r"yolo[v]?\d+([cetbnslmx])", Path(model_path).stem).group(1)  # noqa, returns n, s, m, l, or x
+        return re.search(r"(yolo)[v]?\d+([cetbnslmx])(-obb)?", Path(model_path).stem).groups()[1]  # noqa, returns n, s, m, l, or x
     except AttributeError:
         return ""
+
+
+def guess_model_type(model_path):
+    """
+    Takes a path to a YOLO model's YAML file as input and extracts the size character of the model's scale. The function
+    uses regular expression matching to find the pattern of the model scale in the YAML file name, which is denoted by
+    n, s, m, l, or x. The function returns the size character of the model scale as a string.
+
+    Args:
+        model_path (str | Path): The path to the YOLO model's YAML file.
+
+    Returns:
+        (str): The size character of the model's scale, which can be n, s, m, l, or x.
+    """
+    try:
+        version, obb = re.search(r"(yolo)[v]?\d+([cetbnslmx])(-obb)?", Path(model_path).stem).groups()[1:]
+        obb = '' if obb is None else obb
+    except AttributeError:
+        version = ''
+        obb = ''
+    return version, obb
 
 
 def guess_model_scale_by_type(model_type):
     """
     通过模型类型猜测模型类型
     Args:
-        model_type (str | Path): 模型类型 11n, v10b
+         model_type (str | Path): 模型类型 11n, v10b, 11n-obb
 
     Returns:
         (str): The size character of the model's scale, which can be n, s, m, l, or x.
     """
     try:
-        return re.search(r"[v]?\d+([cetbnslmx])", Path(model_type).stem).group(1)  # noqa, returns n, s, m, l, or x
+        return re.search(r"[v]?\d+([cetbnslmx])(-obb)?", Path(model_type).stem).groups()[0]  # noqa, returns n, s, m, l, or x
     except AttributeError:
         return ""
 
@@ -1152,7 +1173,7 @@ def guess_model_name(model_path):
         (str) : 模型名称 yolo11n, yolov5 ...
     """
     try:
-        model_name = re.search(r"yolo[v]?\d+([cetbnslmx])", Path(model_path).stem).group(0)
+        model_name = re.search(r"(yolo)[v]?\d+([cetbnslmx])(-obb)?", Path(model_path).stem).group(0)
     except AttributeError:
         model_name = ''
     return model_name
