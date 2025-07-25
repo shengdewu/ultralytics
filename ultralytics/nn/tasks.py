@@ -1128,6 +1128,36 @@ def guess_model_scale(model_path):
         return ""
 
 
+def guess_model_scale_by_type(model_type):
+    """
+    通过模型类型猜测模型类型
+    Args:
+        model_type (str | Path): 模型类型 11n, v10b
+
+    Returns:
+        (str): The size character of the model's scale, which can be n, s, m, l, or x.
+    """
+    try:
+        return re.search(r"[v]?\d+([cetbnslmx])", Path(model_type).stem).group(1)  # noqa, returns n, s, m, l, or x
+    except AttributeError:
+        return ""
+
+
+def guess_model_name(model_path):
+    """
+    通过传入模型路径,猜测模型类型
+    Args:
+        model_path (str| Path): 模型路径 xxx/yolo11n.pt
+    Returns:
+        (str) : 模型名称 yolo11n, yolov5 ...
+    """
+    try:
+        model_name = re.search(r"yolo[v]?\d+([cetbnslmx])", Path(model_path).stem).group(0)
+    except AttributeError:
+        model_name = ''
+    return model_name
+
+
 def guess_model_task(model):
     """
     Guess the task of a PyTorch model from its architecture or configuration.
