@@ -7,7 +7,7 @@ import argparse
 import yaml
 import torch
 from ultralytics import YOLO
-from ultralytics.nn.tasks import yaml_model_load
+from ultralytics.nn.tasks import yaml_model_load, guess_model_name, guess_model_type, guess_model_scale_by_type
 
 
 MODEL_CFG_PATH = 'ultralytics/cfg/models'
@@ -25,12 +25,9 @@ def collect_mode_type():
     model_type = list()
     for m in mtype:
         for yml in os.listdir(f'{MODEL_CFG_PATH}/{m}'):
-            try:
-                scale = re.search(r"yolo[v]?\d+([cetbnslmx])", yml).group(1)
-            except AttributeError:
-                scale = ''
-            if scale != '':
-                model_type.append(f'{m}{scale}')
+            version, obb = guess_model_type(yml)
+            if version != '':
+                model_type.append(f'{m}{version}{obb}')
             else:
                 model_type.append(m)
     return model_type
@@ -195,11 +192,8 @@ def create_data_cfg(opt):
 def run(opt):
     opt.data = create_data_cfg(opt)
 
-    try:
-        scale = re.search(r"[v]?\d+([cetbnslmx])", opt.model_type).group(1)
-        model_version = opt.model_type[:opt.model_type.find(scale)]
-    except AttributeError:
-        model_version = opt.model_type
+    scale = guess_model_scale_by_type(opt.model_type)
+    model_version = opt.model_type[:opt.model_type.find(scale)] if scale != '' else opt.model_type
 
     model_name = f'yolo{opt.model_type}'
     opt.weights = f'{MODEL_CFG_PATH}/{model_version}/{model_name}.yaml'
@@ -207,11 +201,10 @@ def run(opt):
     print(f'加载模型配置文件 {opt.weights } !')
 
     if not opt.resume and os.path.exists(opt.pretrain_model):
-        try:
-            check_model_name = re.search(r"yolo[v]?\d+([cetbnslmx])", opt.pretrain_model).group(0)
-        except AttributeError:
-            check_model_name = ''
-
+        check_model_name = guess_model_name(opt.pretrain_model)
+        if check_model_name == '':
+            check_model_name = opt.pretrain_model.split('/')[-1].split('.')[0]
+            assert check_model_name in ['yolov3', 'yolov6']
         assert check_model_name == model_name, f'({opt.pretrain_model})预训练模型和指定的模型类型不匹配({model_name})'
 
         opt.weights = opt.pretrain_model

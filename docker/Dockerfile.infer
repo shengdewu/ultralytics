@@ -29,7 +29,7 @@ COPY docker/requirements.txt /tmp/
 RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
     && pip install -r /tmp/requirements.txt
 
-RUN pip install fastapi==0.115.12 pydantic==2.11.2 uvicorn==0.34.0
+RUN pip install fastapi==0.115.12 pydantic==2.11.2 uvicorn==0.34.0 gradio==5.24.0
 
 COPY docker/Arial.ttf /root/.config/Ultralytics/
 # Create working directory
