@@ -49,7 +49,7 @@ def parse_opt():
     parser.add_argument('--pretrain-model', type=str, default='',
                         help='预训练模型必须和model-type匹配 /xx/yolo11n.pt，可以从这里下载对应版本https://docs.ultralytics.com/models/'
                              'resume=True时，这个参数会失效')
-    parser.add_argument('--data', type=str, default='', help='数据配置,如果使用了此配置,则--img-path和--label-file失效')
+    parser.add_argument('--data', type=str, default='', help='yaml格式数据配置, 如果使用了此配置,则--img-path和--label-file失效')
     parser.add_argument('--img-path', type=str, default='', help='图片路径')
     parser.add_argument('--label-file', type=str, default='', help='标签目录(必须包含labels和notes.json）或者压缩文件 (就是在标签目录下的zip)')
     parser.add_argument('--epochs', type=int, default=100, help='模型训练的epoch')
