@@ -1852,7 +1852,7 @@ class Albumentations:
                 A.MedianBlur(p=0.01),
                 A.ToGray(p=0.01),
                 A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.1),
+                A.RandomBrightnessContrast(p=0.5),
                 A.RandomGamma(p=0.01),
                 A.ImageCompression(quality_lower=65, p=0.4),
             ]
@@ -1869,9 +1869,9 @@ class Albumentations:
                 self.transform.set_random_seed(torch.initial_seed())
             LOGGER.info(prefix + ", ".join(f"{x}".replace("always_apply=False, ", "") for x in T if x.p))
         except ImportError:  # package not installed, skip
-            pass
+            LOGGER.warning(prefix + " not installed, skip")
         except Exception as e:
-            LOGGER.info(f"{prefix}{e}")
+            LOGGER.warning(f"{prefix}{e}")
 
     def __call__(self, labels):
         """
