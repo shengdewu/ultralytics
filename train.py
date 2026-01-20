@@ -43,7 +43,7 @@ def device_type(value):
 
 def parse_opt():
     parser = argparse.ArgumentParser(description='yolo目标检测启动参数')
-    parser.add_argument('--model-type', type=str, default='11n',
+    parser.add_argument('--model-type', type=str, default='11s-obb',
                         choices=collect_mode_type(),
                         help='模型类型，目前支持11, v3, v5, v6, v8, v9, v10的各种版本')
     parser.add_argument('--pretrain-model', type=str, default='',
