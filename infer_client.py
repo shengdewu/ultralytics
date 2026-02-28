@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import json
 import requests
@@ -14,13 +16,13 @@ def numpy2base(image):
     return base
 
 
-def client(img_path, address='http://127.0.0.1:8000/infer'):
-    image = cv2.imread(img_path, cv2.IMREAD_COLOR)
+def client(img_file, out_file, address='http://127.0.0.1:8000/infer'):
+    image = cv2.imread(img_file, cv2.IMREAD_COLOR)
     buffer = numpy2base(image)
 
     params = {
         "image_base64": buffer,
-        "confidence": 0.6
+        "confidence": 0.1
     }
 
     results = None
@@ -36,15 +38,19 @@ def client(img_path, address='http://127.0.0.1:8000/infer'):
 
     if results is not None:
         for result in results:
-            cv2.rectangle(image, (int(result['x1']), int(result['y1'])), (int(result['x2']), int(result['y2'])), color=(255, 255, 255))
             cls = result['cls']
             conf = result['confidence']
-            cv2.putText(image, f'{cls}-{conf}', (int(result['x1']), int(result['y1'])), 1, 1, color=(255, 0, 0))
-        cv2.imwrite('result.jpg', image)
+            color = (0, 255, 0)
+            if conf >= 0.65:
+                color = (0, 0, 255)
+            cv2.putText(image, f'{cls}-{conf:.2}', (int(result['x1']), int(result['y1'])), 2, 4, color=color, thickness=2)
+            cv2.rectangle(image, (int(result['x1']), int(result['y1'])), (int(result['x2']), int(result['y2'])),
+                          color=color, thickness=3)
+        cv2.imwrite(out_file, image)
 
     return
 
 
 # 启动命令
 if __name__ == "__main__":
-    client('./datasets/0-2.jpg', 'http://10.113.19.30:38000/infer')
+    client('./datasets/0-2.jpg', './datasets/0-2-result.jpg', 'http://127.0.0.1:12345/infer')

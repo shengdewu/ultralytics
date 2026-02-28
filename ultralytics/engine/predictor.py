@@ -341,7 +341,12 @@ class BasePredictor:
             with getattr(self, 'profilers')[2]:
                 results = self.postprocess(preds, im, [source])
 
-            return results[0].boxes.data
+            if results[0].boxes is None:
+                # obb
+                bboxes = results[0].obb.data
+            else:
+                bboxes = results[0].boxes.data
+            return bboxes
 
     def setup_model(self, model, verbose=True):
         """Initialize YOLO model with given parameters and set it to evaluation mode."""

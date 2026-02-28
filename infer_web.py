@@ -1,5 +1,6 @@
 import os
 from ultralytics import YOLO
+from ultralytics.utils import ops
 import cv2
 import numpy as np
 from fastapi import FastAPI
@@ -14,6 +15,7 @@ from gradio.routes import mount_gradio_app
 
 
 WEIGHT = 'save/weights/best.pt'
+TASK = None
 
 
 def base2numpy(base):
@@ -22,7 +24,7 @@ def base2numpy(base):
     """
     img_bin = base64.b64decode(base.split(';base64,')[-1])
     img_buff = np.frombuffer(img_bin, dtype='uint8')
-    image = cv2.imdecode(img_buff, 1)
+    image = cv2.imdecode(img_buff, -1)
     return image
 
 
@@ -38,7 +40,7 @@ def numpy2base(image):
 
 class YOLOEngine:
     def __init__(self, weight: str):
-        self.model = YOLO(weight)
+        self.model = YOLO(weight, task=TASK)
         return
 
     def __call__(self, in_array: np.ndarray, conf=0.25):
@@ -46,6 +48,13 @@ class YOLOEngine:
 
         results = list()
         preds = preds.detach().cpu().numpy()
+        if preds.shape[1] == 7:
+            # obb
+            xyxyxyxy = ops.xywhr2xyxyxyxy(preds[:, :5])
+            x = xyxyxyxy[..., 0]
+            y = xyxyxyxy[..., 1]
+            xyxy = np.stack([x.min(1), y.min(1), x.max(1), y.max(1)], -1)
+            preds = np.concatenate([xyxy, preds[:, 5:]], axis=-1)
         for i in range(preds.shape[0]):
             pred = preds[i]
             x1, y1, x2, y2, conf, cls = pred
@@ -126,6 +135,7 @@ app = mount_gradio_app(app=app, blocks=cv_ui(), path="/ui")
 def parse_opt():
     parser = argparse.ArgumentParser(description='推理服务参数')
     parser.add_argument('--weight', type=str, default='/workspace/dataset/models/best.pt', help='模型路径')
+    parser.add_argument('--task', type=str, default='', help='模型类型')
     return parser.parse_args()
 
 
@@ -133,5 +143,6 @@ def parse_opt():
 if __name__ == "__main__":
     args = parse_opt()
     WEIGHT = args.weight
+    TASK = None if args.task == '' else args.task
 
-    uvicorn.run(app, host="0.0.0.0", port=54321)
+    uvicorn.run(app, host="0.0.0.0", port=12345)
