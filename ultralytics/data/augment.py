@@ -1850,9 +1850,9 @@ class Albumentations:
             T = [
                 A.Blur(p=0.01),
                 A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
+                A.ToGray(p=0.1),
                 A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.5),
+                A.RandomBrightnessContrast(p=0.6),
                 A.RandomGamma(p=0.01),
                 A.ImageCompression(quality_lower=65, p=0.4),
             ]
