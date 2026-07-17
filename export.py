@@ -9,10 +9,16 @@ import os
 import argparse
 
 
-def test_performance(model: torch.nn.Module, in_size):
+def test_performance(model: torch.nn.Module, in_size, is_pro=True):
     model.eval()
 
-    flops, params = profile(model, inputs=(torch.ones((1, 3, in_size, in_size), dtype=torch.float32),), verbose=False)
+    flops = None
+    params = None
+    if is_pro:
+        flops, params = profile(model, inputs=(torch.ones((1, 3, in_size, in_size), dtype=torch.float32),), verbose=False)
+        params /= 1000 ** 2
+        flops /= 1000 ** 3
+
     total_time = 0
     cnt = 10
     for i in range(cnt):
@@ -33,7 +39,7 @@ def test_performance(model: torch.nn.Module, in_size):
         buffer_size += buffer.nelement() * buffer.element_size()
         buffer_sum += buffer.nelement()
 
-    print(f'{model.__class__.__name__} FLOPS = {flops / 1000 ** 3}G, Params = {params / 1000 ** 2}M, Size = {(param_size+ buffer_size)/1024/1024}M, TIME {total_time/cnt}')
+    print(f'{model.__class__.__name__} FLOPS = {flops}G, Params = {params}M, Size = {(param_size+ buffer_size)/1024/1024}M, TIME {total_time/cnt}')
     return
 
 
@@ -48,6 +54,5 @@ if __name__ == '__main__':
     # results[0].show()
     
     # Export the model
-    model.export(format="onnx", opset=11)
+    model.export(format="onnx", opset=11, imgsz=640, dynamic=True)
 
-    test_performance(model, 640)
