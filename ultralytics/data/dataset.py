@@ -8,6 +8,7 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import Any
+import os
 
 import cv2
 import numpy as np
@@ -88,6 +89,8 @@ class YOLODataset(BaseDataset):
         self.use_obb = task == "obb"
         self.data = data
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
+        self.ann_name = kwargs['img_path']
+        self.im_files, self.label_files = self.parse_img_label_files(self.ann_name, kwargs['fraction'])
         super().__init__(*args, channels=self.data.get("channels", 3), **kwargs)
 
     def cache_labels(self, path: Path = Path("./labels.cache")) -> dict:
@@ -160,6 +163,37 @@ class YOLODataset(BaseDataset):
             save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
         return x
 
+    @staticmethod
+    def parse_img_label_files(ann_path, fraction):
+        label_files = list()
+        im_files = list()
+        for p in ann_path if isinstance(ann_path, list) else [ann_path]:
+            p = Path(p)  # os-agnostic
+            if p.is_file():  # file
+                with open(p, mode='r') as t:
+                    lines = t.read().strip().splitlines()
+                parent = str(p.parent) + '/'
+                for line in lines:
+                    img_path, label_path = line.split(',')
+                    img_path = parent + os.sep + img_path
+                    label_path = parent + os.sep + label_path
+                    if os.path.exists(label_path) and os.path.exists(img_path):
+                        label_files.append(label_path)
+                        im_files.append(img_path)
+
+        if len(label_files) == 0:
+            raise FileNotFoundError('无效的标注文件，请确认文件里的内容是否有效')
+
+        if fraction < 1:
+            total = len(label_files)
+            im_files = im_files[: round(total * fraction)]  # retain a fraction of the dataset
+            label_files = label_files[: round(total * fraction)]  # retain a fraction of the dataset
+        return im_files, label_files
+
+    def get_img_files(self, img_path):
+        """Read image files."""
+        return self.im_files
+
     def get_labels(self) -> list[dict]:
         """Return list of label dictionaries for YOLO training.
 
@@ -168,13 +202,14 @@ class YOLODataset(BaseDataset):
         Returns:
             (list[dict]): List of label dictionaries, each containing information about an image and its annotations.
         """
-        self.label_files = img2label_paths(self.im_files)
-        cache_path = Path(self.label_files[0]).parent.with_suffix(".cache")
+        flag = self.ann_name.split('/')[-1].split('.')[0]
+        cache_path = Path(os.path.dirname(self.label_files[0]) + f'-{flag}').with_suffix('.cache')
         try:
             cache, exists = load_dataset_cache_file(cache_path), True  # attempt to load a *.cache file
             assert cache["version"] == DATASET_CACHE_VERSION  # matches current version
             assert cache["hash"] == get_hash(self.label_files + self.im_files)  # identical hash
         except (FileNotFoundError, AssertionError, AttributeError, ModuleNotFoundError):
+            LOGGER.warning(f'重新创建数据缓存 标签个数 {len(self.label_files)}, 图片个数 {len(self.im_files)}')
             cache, exists = self.cache_labels(cache_path), False  # run cache ops
 
         # Display cache
