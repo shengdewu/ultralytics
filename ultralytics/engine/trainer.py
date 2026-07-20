@@ -644,9 +644,8 @@ class BaseTrainer:
 
     def read_results_csv(self):
         """Read results.csv into a dictionary using polars."""
-        import polars as pl  # scope for faster 'import ultralytics'
-
         try:
+            import polars as pl  # scope for faster 'import ultralytics'
             return pl.read_csv(self.csv, infer_schema_length=None).to_dict(as_series=False)
         except Exception:
             return {}
