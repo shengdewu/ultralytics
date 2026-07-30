@@ -30,16 +30,16 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY docker/requirements.txt /tmp/
-RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
-    && pip install -r /tmp/requirements.txt
-
 # 设置时区环境变量（例如：Asia/Shanghai）
 # 安装 tzdata 并配置时区
 ENV TZ=Asia/Shanghai
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
     rm -rf /var/lib/apt/lists/*
+
+COPY docker/requirements.txt /tmp/
+RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
+    && pip install -r /tmp/requirements.txt
 
 COPY docker/Arial.ttf /root/.config/Ultralytics/
 # Create working directory

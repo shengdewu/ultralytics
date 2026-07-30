@@ -16,3 +16,4 @@ pandas>=1.1.4
 seaborn>=0.11.0 # plotting
 ultralytics-thop>=2.0.0 # FLOPs computation https://github.com/ultralytics/thop
 albumentations==1.0.3
+polars==1.42.0

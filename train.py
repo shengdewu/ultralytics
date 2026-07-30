@@ -21,7 +21,7 @@ def probability(x):
 
 
 def collect_mode_type():
-    mtype = ['11', 'v3', 'v5', 'v6', 'v8', 'v9', 'v10']
+    mtype = ['11', 'v3', 'v5', 'v6', 'v8', 'v9', 'v10', '26']
     model_type = list()
     for m in mtype:
         for yml in os.listdir(f'{MODEL_CFG_PATH}/{m}'):
