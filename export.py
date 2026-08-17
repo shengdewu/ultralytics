@@ -54,5 +54,5 @@ if __name__ == '__main__':
     # results[0].show()
     
     # Export the model
-    model.export(format="onnx", opset=11, imgsz=640, dynamic=True)
+    model.export(format="onnx", opset=11, imgsz=640, dynamic=False)
 
