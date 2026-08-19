@@ -2128,7 +2128,7 @@ class Albumentations(BaseTransform):
                 self.transform.set_random_seed(torch.initial_seed())
             LOGGER.info(prefix + ", ".join(f"{x}".replace("always_apply=False, ", "") for x in T if x.p))
         except ImportError:  # package not installed, skip
-            pass
+            LOGGER.warning(f"{prefix} 没有安装")
         except Exception as e:
             LOGGER.info(f"{prefix}{e}")
 
