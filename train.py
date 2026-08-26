@@ -25,11 +25,10 @@ def collect_mode_type():
     model_type = list()
     for m in mtype:
         for yml in os.listdir(f'{MODEL_CFG_PATH}/{m}'):
-            version, obb = guess_model_type(yml)
-            if version != '':
-                model_type.append(f'{m}{version}{obb}')
-            else:
-                model_type.append(m)
+            version, obb_seg = guess_model_type(yml)
+            if version == '':
+                continue
+            model_type.append(f'{m}{version}{obb_seg}')
     return model_type
 
 
@@ -232,7 +231,7 @@ def run(opt):
         opt.weights = resume_weight
 
     # 加载模型
-    model = YOLO(opt.weights, task='detect')
+    model = YOLO(opt.weights, task='detect' if model_name.find('-seg') == -1 else 'segment')
 
     # 训练模型
     train_results = model.train(
