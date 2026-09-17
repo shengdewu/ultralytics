@@ -57,6 +57,7 @@ def parse_opt():
     parser.add_argument('--workers', type=int, default=4, help='数据处理的进程数')
     parser.add_argument('--device', type=device_type, default='cuda', help='模型训练使用的设备')
     parser.add_argument('--imgsz', type=int, default=640, help='图片输入到模型的大小')
+    parser.add_argument('--optimizer', type=str, default='MuSGD', help='优化器,SGD, MuSGD, Adam, Adamax, AdamW, NAdam, RAdam, RMSProp, or auto')
     parser.add_argument('--lr', type=probability, default=0.005, help='学习率取值范围(0, 1)')
     parser.add_argument("--save-dir", type=str, default="./save", help="结果保持路径")
     parser.add_argument("--resume", action="store_true", help="是否继续训练")
@@ -244,6 +245,7 @@ def run(opt):
         resume=opt.resume,
         save_dir=opt.save_dir,
         workers=opt.workers,
+        optimizer=opt.optimizer,
         lr0=opt.lr,
     )
 
