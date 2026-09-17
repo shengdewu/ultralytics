@@ -2090,12 +2090,13 @@ def guess_model_type(model_path):
         (str): The size character of the model's scale, which can be n, s, m, l, or x.
     """
     try:
-        version, obb = re.search(r"(yolo)[v]?\d+([cetbnslmx])(-obb)?", Path(model_path).stem).groups()[1:]
-        obb = '' if obb is None else obb
+        version, obb_seg = re.search(r"(yolo)[v]?\d+([cetbnslmx])?(-obb|-seg)?", Path(model_path).stem).groups()[1:]
+        obb_seg = '' if obb_seg is None else obb_seg
+        version = '' if version is None else version
     except AttributeError:
         version = ''
-        obb = ''
-    return version, obb
+        obb_seg = ''
+    return version, obb_seg
 
 
 def guess_model_scale_by_type(model_type):
@@ -2108,7 +2109,7 @@ def guess_model_scale_by_type(model_type):
         (str): The size character of the model's scale, which can be n, s, m, l, or x.
     """
     try:
-        return re.search(r"[v]?\d+([cetbnslmx])(-obb)?", Path(model_type).stem).groups()[0]  # noqa, returns n, s, m, l, or x
+        return re.search(r"[v]?\d+([cetbnslmx])?(-obb|-seg)?", Path(model_type).stem).groups()[0]  # noqa, returns n, s, m, l, or x
     except AttributeError:
         return ""
 
@@ -2122,7 +2123,7 @@ def guess_model_name(model_path):
         (str) : 模型名称 yolo11n, yolov5 ...
     """
     try:
-        model_name = re.search(r"(yolo)[v]?\d+([cetbnslmx])(-obb)?", Path(model_path).stem).group(0)
+        model_name = re.search(r"(yolo)[v]?\d+([cetbnslmx])?(-obb|-seg)?", Path(model_path).stem).group(0)
     except AttributeError:
         model_name = ''
     return model_name
