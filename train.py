@@ -2,6 +2,7 @@ import os
 import re
 import random
 import json
+import ast
 import subprocess
 import argparse
 import yaml
@@ -40,6 +41,34 @@ def device_type(value):
         raise argparse.ArgumentTypeError(f"Invalid device: {value}")
 
 
+def parse_freeze_arg(s: str):
+    """
+    --freeze 支持：
+      1. none                -> None
+      2. 10                  -> int （冻结前10层）
+      3. 0,1,2,backbone      -> list [0,1,2,"backbone"] 逗号分隔
+    """
+    s = s.strip()
+    if s.lower() == "none":
+        return None
+
+    # 先尝试整数
+    try:
+        return int(s)
+    except ValueError:
+        pass
+
+    # 逗号分割模式： 0,1,2,backbone
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    res = []
+    for p in parts:
+        try:
+            res.append(int(p))
+        except ValueError:
+            res.append(p)
+    return res
+
+
 def parse_opt():
     parser = argparse.ArgumentParser(description='yolo目标检测启动参数')
     parser.add_argument('--model-type', type=str, default='11s-obb',
@@ -61,6 +90,7 @@ def parse_opt():
     parser.add_argument("--save-dir", type=str, default="./save", help="结果保持路径")
     parser.add_argument("--resume", action="store_true", help="是否继续训练")
     parser.add_argument("--r-create", action="store_true", help="是否重新创建数据集合")
+    parser.add_argument("--freeze", type=parse_freeze_arg, default=None, help="冻结层：int / list / none")
     return parser.parse_args()
 
 
@@ -246,6 +276,7 @@ def run(opt):
         workers=opt.workers,
         optimizer=opt.optimizer,
         lr0=opt.lr,
+        freeze=opt.freeze
     )
 
     # 评估模型在验证集上的性能
