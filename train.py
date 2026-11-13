@@ -91,6 +91,7 @@ def parse_opt():
     parser.add_argument("--resume", action="store_true", help="是否继续训练")
     parser.add_argument("--r-create", action="store_true", help="是否重新创建数据集合")
     parser.add_argument("--freeze", type=parse_freeze_arg, default=None, help="冻结层：int / list / none")
+    parser.add_argument("--classes", type=int, default=None, nargs = "*", help="需要保留的类别，如果不设置则训练所有 e.g. --classes 0 2 3.")
     return parser.parse_args()
 
 
@@ -276,7 +277,8 @@ def run(opt):
         workers=opt.workers,
         optimizer=opt.optimizer,
         lr0=opt.lr,
-        freeze=opt.freeze
+        freeze=opt.freeze,
+        classes=opt.classes
     )
 
     # 评估模型在验证集上的性能
