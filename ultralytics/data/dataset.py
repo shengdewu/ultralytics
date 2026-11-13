@@ -90,7 +90,24 @@ class YOLODataset(BaseDataset):
         self.data = data
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
         self.ann_name = kwargs['img_path']
-        self.im_files, self.label_files = self.parse_img_label_files(self.ann_name, kwargs['fraction'])
+        self.im_files, self.label_files = list(), list()
+        if isinstance(self.ann_name, list):
+            img_path = ''
+            for ann in self.ann_name:
+                if isinstance(ann, tuple) or isinstance(ann, list):
+                    ann, fraction = ann
+                    img_path = ann
+                else:
+                    ann, fraction = kwargs['fraction']
+                    img_path = ann
+                im_files, label_files = self.parse_img_label_files(ann, fraction)
+                self.im_files.extend(im_files)
+                self.label_files.extend(label_files)
+            self.img_path = '/'.join(img_path.split('/')[:-2])
+        else:
+            self.im_files, self.label_files = self.parse_img_label_files(self.ann_name, kwargs['fraction'])
+            self.img_path = '/'.join(self.ann_name.split('/')[:-1])
+        kwargs['img_path'] = self.img_path
         super().__init__(*args, channels=self.data.get("channels", 3), **kwargs)
 
     def cache_labels(self, path: Path = Path("./labels.cache")) -> dict:
@@ -202,8 +219,8 @@ class YOLODataset(BaseDataset):
         Returns:
             (list[dict]): List of label dictionaries, each containing information about an image and its annotations.
         """
-        flag = self.ann_name.split('/')[-1].split('.')[0]
-        cache_path = Path(os.path.dirname(self.label_files[0]) + f'-{flag}').with_suffix('.cache')
+        flag = 'train' if self.augment else 'test'
+        cache_path = Path(self.img_path + f'/{flag}').with_suffix('.cache')
         try:
             cache, exists = load_dataset_cache_file(cache_path), True  # attempt to load a *.cache file
             assert cache["version"] == DATASET_CACHE_VERSION  # matches current version

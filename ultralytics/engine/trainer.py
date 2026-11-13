@@ -264,12 +264,22 @@ class BaseTrainer:
     def _build_train_pipeline(self):
         """Build dataloaders, optimizer, and scheduler for current batch size."""
         batch_size = self.batch_size // max(self.world_size, 1)
+        train_path = []
+        test_path = []
+        if 'dataset' in self.data:
+            for sub_data in self.data['dataset']:
+                train_path.append((sub_data['train'], sub_data.get('fraction', 1.0)))
+                test_path.append((sub_data.get('val') or sub_data.get('test'), sub_data.get('fraction', 1.0)))
+        else:
+            train_path = self.data['train']
+            test_path = self.data.get('val') or self.data.get('test')
+
         self.train_loader = self.get_dataloader(
-            self.data["train"], batch_size=batch_size, rank=LOCAL_RANK, mode="train"
+            train_path, batch_size=batch_size, rank=LOCAL_RANK, mode="train"
         )
         # Note: When training DOTA dataset, double batch size could get OOM on images with >2000 objects.
         self.test_loader = self.get_dataloader(
-            self.data.get("val") or self.data.get("test"),
+            test_path,
             batch_size=batch_size if self.args.task in {"obb", "semantic"} else batch_size * 2,
             rank=LOCAL_RANK,
             mode="val",
