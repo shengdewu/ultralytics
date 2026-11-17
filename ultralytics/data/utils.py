@@ -483,7 +483,11 @@ def check_det_dataset(dataset: str, autodownload: bool = True, split: str = "") 
     data = YAML.load(file, append_filename=True)  # dictionary
 
     # Checks
-    def check_format(data):
+    def check_format(data, split):
+
+        if split and not data.get(split):
+            raise FileNotFoundError(f"{dataset} '{split}:' images not found ❌")
+
         for k in "train", "val":
             if k not in data:
                 if k != "val" or "validation" not in data:
@@ -496,12 +500,10 @@ def check_det_dataset(dataset: str, autodownload: bool = True, split: str = "") 
 
     if 'dataset' in data:
         for i in range(len(data['dataset'])):
-            data['dataset'][i] = check_format(data['dataset'][i])
+            data['dataset'][i] = check_format(data['dataset'][i], split)
     else:
         data = check_format(data)
 
-    if split and not data.get(split):
-        raise FileNotFoundError(f"{dataset} '{split}:' images not found ❌")
     if "names" not in data and "nc" not in data:
         raise SyntaxError(emojis(f"{dataset} key missing ❌.\n either 'names' or 'nc' are required in all data YAMLs."))
     if "nc" in data and not isinstance(data["nc"], int):

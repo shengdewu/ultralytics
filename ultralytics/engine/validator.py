@@ -213,7 +213,15 @@ class BaseValidator:
             if not (pt or (getattr(model, "dynamic", False) and fmt != "imx")):
                 self.args.rect = False
             self.stride = model.stride  # used in get_dataloader() for padding
-            self.dataloader = self.dataloader or self.get_dataloader(self.data.get(self.args.split), self.args.batch)
+
+            dataset_path = []
+            if 'dataset' in self.data:
+                for sub_data in self.data['dataset']:
+                    dataset_path.append(sub_data.get(self.args.split))
+            else:
+                dataset_path = self.data.get(self.args.split)
+
+            self.dataloader = self.dataloader or self.get_dataloader(dataset_path, self.args.batch)
 
             model.eval()
             if self.args.compile:

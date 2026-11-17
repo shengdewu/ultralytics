@@ -244,7 +244,7 @@ def run(opt):
     if opt.resume:
         resume_weight = f'{opt.save_dir}/weights/last.pt' # 和 ultralytics/engine/trainer.py:117 强关联
         assert os.path.exists(resume_weight), f'启动恢复训练时,最近一次保存的checkpoint({resume_weight})不存在'
-        check = torch.load(resume_weight, map_location='cpu')
+        check = torch.load(resume_weight, map_location='cpu', weights_only=False)
         check_model = check.get('model', None)
         check_model = check_model if check_model is not None else check.get('ema', None)
         assert check_model is not None, f'{resume_weight} 模型格式不正确，这个模型不能进行resume, 请重新训练'
@@ -257,8 +257,11 @@ def run(opt):
             if k in ['yaml_file', 'ch', 'nc']:
                 continue
             wv = weight.get(k, None)
-            assert wv is not None and wv == cv, f'对比恢复训练的模型和[model_type]指定的模型类型({opt.model_type})时，发现{k}的' \
-                                                f'值不一致({cv})!=({wv})不一致, 请检查输入参数(model_type)和原来的是否一致!'
+            if wv is None:
+                print(f'在{opt.weights}没有发现{k}，忽略')
+                continue
+            assert wv == cv, f'对比恢复训练的模型和[model_type]指定的模型类型({opt.model_type})时，发现{k}的' \
+                             f'值不一致({cv})!=({wv})不一致, 请检查输入参数(model_type)和原来的是否一致!'
 
         opt.weights = resume_weight
 

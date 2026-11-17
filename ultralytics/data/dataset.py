@@ -98,7 +98,7 @@ class YOLODataset(BaseDataset):
                     ann, fraction = ann
                     img_path = ann
                 else:
-                    ann, fraction = kwargs['fraction']
+                    ann, fraction = ann, kwargs['fraction']
                     img_path = ann
                 im_files, label_files = self.parse_img_label_files(ann, fraction)
                 self.im_files.extend(im_files)
